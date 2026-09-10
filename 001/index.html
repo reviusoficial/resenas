@@ -4,32 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>¿Cómo estuvo tu experiencia?</title>
-
+ 
 <!-- ============================================================= -->
 <!--  ⚙️  CONFIGURA AQUÍ (edita SOLO estas líneas por cada local)   -->
 <!-- ============================================================= -->
 <script>
   // 1) Enlace de reseñas de Google Maps del local:
   const ENLACE_GOOGLE_MAPS = "https://search.google.com/local/writereview?placeid=ChIJLVtDibrDBZERH8fwLSpZJbg";
-
+ 
   // 2) Nombre del local (sale en el título):
   const NOMBRE_DEL_LOCAL = "Tu Restaurante";
-
+ 
   // 3) Número del local (para el contador). Debe coincidir con la carpeta: 001, 002, ...
   const NUMERO_LOCAL = "001";
-
+ 
   // 4) 🔴 INTERRUPTOR DE PAGO:  true = activo   |   false = servicio en pausa
   const ACTIVO = true;
-
+ 
   // 5) (Opcional) Enlace del contador de Google Sheets. Déjalo vacío "" hasta que lo tengas.
   const ENLACE_CONTADOR = "https://script.google.com/macros/s/AKfycbzjLRT-9zff2rtHENLu5pX68b91y4C5RoVnFPDwZ2NEFbRYxRY9VXpAPT7eZ5yFyjhT/exec";
+ 
+  // 6) Anti-spam: horas que un mismo teléfono NO puede volver a votar en este local.
+  const HORAS_BLOQUEO = 12;
 </script>
 <!-- ============================================================= -->
-
+ 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
+ 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -59,20 +62,19 @@
     margin-bottom: 14px; transition: transform .08s ease, box-shadow .2s ease;
   }
   .boton:active { transform: scale(.98); }
-  .boton:disabled { opacity: .5; cursor: default; }
   .boton-bueno { background: #1e8e3e; color: #fff; box-shadow: 0 3px 10px rgba(30,142,62,.25); }
   .boton-malo { background: #fff; color: #3c4043; border: 1.5px solid #dadce0; }
-  #gracias, #pausa, #yavoto { display: none; animation: aparecer .4s ease; }
-  #gracias .check, #pausa .icono, #yavoto .icono { font-size: 52px; margin-bottom: 12px; }
-  #gracias h2, #pausa h2, #yavoto h2 { font-size: 21px; margin-bottom: 10px; }
-  #gracias p, #pausa p, #yavoto p { font-size: 15px; color: #5f6368; line-height: 1.5; }
+  #gracias, #pausa, #yaRegistrado { display: none; animation: aparecer .4s ease; }
+  #gracias .check, #pausa .icono, #yaRegistrado .icono { font-size: 52px; margin-bottom: 12px; }
+  #gracias h2, #pausa h2, #yaRegistrado h2 { font-size: 21px; margin-bottom: 10px; }
+  #gracias p, #pausa p, #yaRegistrado p { font-size: 15px; color: #5f6368; line-height: 1.5; }
   .pie { margin-top: 22px; font-size: 12px; color: #bdc1c6; }
 </style>
 </head>
-
+ 
 <body>
   <div class="tarjeta">
-
+ 
     <!-- Vista 1: la elección -->
     <div id="eleccion">
       <div class="logo-zona">
@@ -84,60 +86,66 @@
       <h1 id="titulo">¡Gracias por tu visita!</h1>
       <p class="subtitulo">¿Cómo calificarías tu experiencia?</p>
       <div class="estrellas">⭐⭐⭐⭐⭐</div>
-      <button id="btnBueno" class="boton boton-bueno" onclick="elegirFeliz()">😀 Excelente — 5 estrellas</button>
-      <button id="btnMalo" class="boton boton-malo" onclick="elegirTriste()">😕 Puede mejorar</button>
+      <button class="boton boton-bueno" onclick="elegirFeliz()">😀 Excelente — 5 estrellas</button>
+      <button class="boton boton-malo" onclick="elegirTriste()">😕 Puede mejorar</button>
     </div>
-
+ 
     <!-- Vista 2: gracias (carita triste) -->
     <div id="gracias">
       <div class="check">🙏</div>
       <h2>¡Gracias por tu comentario!</h2>
       <p>Lamentamos no haberte dado una experiencia perfecta. Tu opinión nos ayuda a mejorar y la tomaremos muy en cuenta. ¡Esperamos verte pronto!</p>
     </div>
-
-    <!-- Vista 3: ya votó (mismo celular) -->
-    <div id="yavoto">
-      <div class="icono">✅</div>
-      <h2>¡Ya registramos tu opinión!</h2>
-      <p>Gracias, tu respuesta ya fue contada. ¡Esperamos verte pronto!</p>
-    </div>
-
-    <!-- Vista 4: servicio en pausa (cuando ACTIVO = false) -->
+ 
+    <!-- Vista 3: servicio en pausa (cuando ACTIVO = false) -->
     <div id="pausa">
       <div class="icono">🔒</div>
       <h2>Servicio en pausa</h2>
       <p>Este servicio no está disponible en este momento.</p>
     </div>
-
+ 
+    <!-- Vista 4: ya votó (anti-spam) -->
+    <div id="yaRegistrado">
+      <div class="icono">✅</div>
+      <h2>¡Ya recibimos tu opinión!</h2>
+      <p>Gracias, tu respuesta ya fue registrada. ¡Esperamos verte pronto!</p>
+    </div>
+ 
     <div class="pie" id="pie"></div>
   </div>
-
+ 
 <script>
   // No necesitas tocar nada de aquí para abajo.
   document.getElementById('titulo').textContent = '¡Gracias por tu visita a ' + NOMBRE_DEL_LOCAL + '!';
   document.getElementById('pie').textContent = NOMBRE_DEL_LOCAL;
-
-  var procesando = false;
-
-  // ¿Este celular ya votó en este local? (candado anti-repetición)
+ 
+  var CLAVE = 'voto_' + NUMERO_LOCAL;
+ 
+  // ¿Este teléfono ya votó hace poco en este local?
   function yaVoto() {
-    try { return localStorage.getItem('voto_' + NUMERO_LOCAL) === '1'; } catch (e) { return false; }
+    try {
+      var t = localStorage.getItem(CLAVE);
+      if (!t) return false;
+      var horas = (Date.now() - parseInt(t, 10)) / 3600000;
+      return horas < HORAS_BLOQUEO;
+    } catch (e) { return false; }
   }
-  function marcarVoto() {
-    try { localStorage.setItem('voto_' + NUMERO_LOCAL, '1'); } catch (e) {}
-  }
+  function marcarVoto() { try { localStorage.setItem(CLAVE, String(Date.now())); } catch (e) {} }
+ 
   function mostrar(id) {
-    document.getElementById('eleccion').style.display = 'none';
+    ['eleccion', 'gracias', 'pausa', 'yaRegistrado'].forEach(function (x) {
+      document.getElementById(x).style.display = 'none';
+    });
     document.getElementById(id).style.display = 'block';
   }
-
-  // Decide qué pantalla mostrar al abrir.
+ 
+  // Al abrir: decide qué vista mostrar.
   if (!ACTIVO) {
     mostrar('pausa');
   } else if (yaVoto()) {
-    mostrar('yavoto');
+    mostrar('yaRegistrado');   // ya votó dentro de las horas de bloqueo
   }
-
+ 
   // Manda el registro al contador (si está configurado).
   function registrar(tipo, despues) {
     if (!ENLACE_CONTADOR) { if (despues) despues(); return; }
@@ -147,23 +155,17 @@
     if (!enviado) { new Image().src = u; }
     if (despues) { setTimeout(despues, 200); }
   }
-
-  function bloquearBotones() {
-    document.getElementById('btnBueno').disabled = true;
-    document.getElementById('btnMalo').disabled = true;
-  }
-
+ 
   function elegirFeliz() {
-    if (procesando || yaVoto()) return;   // candado: un voto por celular
-    procesando = true; bloquearBotones(); marcarVoto();
+    marcarVoto();
     registrar('feliz', function () { window.location.href = ENLACE_GOOGLE_MAPS; });
   }
   function elegirTriste() {
-    if (procesando || yaVoto()) return;   // candado: un voto por celular
-    procesando = true; bloquearBotones(); marcarVoto();
+    marcarVoto();
     registrar('triste');
     mostrar('gracias');
   }
 </script>
 </body>
 </html>
+ 
