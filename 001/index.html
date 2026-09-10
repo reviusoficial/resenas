@@ -6,14 +6,23 @@
 <title>¿Cómo estuvo tu experiencia?</title>
 
 <!-- ============================================================= -->
-<!--  ⚙️  CONFIGURA AQUÍ (edita SOLO estas líneas de abajo)        -->
-<!--     Esto es lo único que cambias por cada restaurante.        -->
+<!--  ⚙️  CONFIGURA AQUÍ (edita SOLO estas líneas por cada local)   -->
 <!-- ============================================================= -->
 <script>
-  // 1) Pega el enlace de reseñas de Google Maps del local (entre las comillas):
-  const ENLACE_GOOGLE_MAPS = "https://search.google.com/local/writereview?placeid=ChIJLVtDibrDBZERH8fwLSpZJbg";
+  // 1) Enlace de reseñas de Google Maps del local:
+  const ENLACE_GOOGLE_MAPS = "https://search.google.com/local/writereview?placeid=PEGA_AQUI_TU_PLACE_ID";
+
   // 2) Nombre del local (sale en el título):
   const NOMBRE_DEL_LOCAL = "Tu Restaurante";
+
+  // 3) Número del local (para el contador). Debe coincidir con la carpeta: 001, 002, ...
+  const NUMERO_LOCAL = "001";
+
+  // 4) 🔴 INTERRUPTOR DE PAGO:  true = activo   |   false = servicio en pausa
+  const ACTIVO = true;
+
+  // 5) (Opcional) Enlace del contador de Google Sheets. Déjalo vacío "" hasta que lo tengas.
+  const ENLACE_CONTADOR = "";
 </script>
 <!-- ============================================================= -->
 
@@ -23,83 +32,40 @@
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    background: #f2f4f7;
-    color: #202124;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    background: #f2f4f7; color: #202124; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
     -webkit-font-smoothing: antialiased;
   }
-
   .tarjeta {
-    background: #ffffff;
-    width: 100%;
-    max-width: 400px;
-    border-radius: 20px;
-    padding: 36px 28px 30px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    text-align: center;
-    animation: aparecer .4s ease;
+    background: #fff; width: 100%; max-width: 400px; border-radius: 20px;
+    padding: 36px 28px 30px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    text-align: center; animation: aparecer .4s ease;
   }
-
   @keyframes aparecer { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-
-  /* ---- Zona del logo ---- */
   .logo-zona { margin-bottom: 22px; min-height: 70px; display: flex; align-items: center; justify-content: center; }
   #logo { max-height: 72px; max-width: 200px; object-fit: contain; }
   #logo-placeholder {
-    display: none;
-    width: 130px; height: 70px;
-    border: 2px dashed #c4c9d0;
-    border-radius: 12px;
-    color: #9aa0a6; font-size: 13px;
-    align-items: center; justify-content: center;
-    flex-direction: column; gap: 2px;
+    display: none; width: 130px; height: 70px; border: 2px dashed #c4c9d0; border-radius: 12px;
+    color: #9aa0a6; font-size: 13px; align-items: center; justify-content: center; flex-direction: column; gap: 2px;
   }
-
   h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
   .subtitulo { font-size: 15px; color: #5f6368; margin-bottom: 20px; }
-
   .estrellas { font-size: 26px; letter-spacing: 3px; margin-bottom: 26px; }
-
   .boton {
-    display: block;
-    width: 100%;
-    padding: 17px 16px;
-    border-radius: 14px;
-    font-size: 17px;
-    font-weight: 500;
-    font-family: inherit;
-    cursor: pointer;
-    border: none;
-    text-decoration: none;
-    margin-bottom: 14px;
-    transition: transform .08s ease, box-shadow .2s ease;
+    display: block; width: 100%; padding: 17px 16px; border-radius: 14px; font-size: 17px;
+    font-weight: 500; font-family: inherit; cursor: pointer; border: none; text-decoration: none;
+    margin-bottom: 14px; transition: transform .08s ease, box-shadow .2s ease;
   }
   .boton:active { transform: scale(.98); }
-
-  .boton-bueno {
-    background: #1e8e3e;
-    color: #ffffff;
-    box-shadow: 0 3px 10px rgba(30,142,62,.25);
-  }
-  .boton-malo {
-    background: #ffffff;
-    color: #3c4043;
-    border: 1.5px solid #dadce0;
-  }
-
-  /* ---- Mensaje de gracias (oculto al inicio) ---- */
-  #gracias { display: none; animation: aparecer .4s ease; }
-  #gracias .check { font-size: 52px; margin-bottom: 12px; }
-  #gracias h2 { font-size: 21px; margin-bottom: 10px; }
-  #gracias p { font-size: 15px; color: #5f6368; line-height: 1.5; }
-
+  .boton:disabled { opacity: .5; cursor: default; }
+  .boton-bueno { background: #1e8e3e; color: #fff; box-shadow: 0 3px 10px rgba(30,142,62,.25); }
+  .boton-malo { background: #fff; color: #3c4043; border: 1.5px solid #dadce0; }
+  #gracias, #pausa, #yavoto { display: none; animation: aparecer .4s ease; }
+  #gracias .check, #pausa .icono, #yavoto .icono { font-size: 52px; margin-bottom: 12px; }
+  #gracias h2, #pausa h2, #yavoto h2 { font-size: 21px; margin-bottom: 10px; }
+  #gracias p, #pausa p, #yavoto p { font-size: 15px; color: #5f6368; line-height: 1.5; }
   .pie { margin-top: 22px; font-size: 12px; color: #bdc1c6; }
 </style>
 </head>
@@ -110,26 +76,37 @@
     <!-- Vista 1: la elección -->
     <div id="eleccion">
       <div class="logo-zona">
-        <!-- 👉 TU LOGO: sube un archivo llamado  logo.png  junto a este index.html.
-             Si no hay logo, se muestra un recuadro "Tu logo aquí". -->
+        <!-- 👉 TU LOGO: sube un archivo llamado logo.png junto a este index.html -->
         <img id="logo" src="logo.png" alt="Logo del local"
              onerror="this.style.display='none'; document.getElementById('logo-placeholder').style.display='flex';">
         <div id="logo-placeholder">🖼️<span>Tu logo aquí</span></div>
       </div>
-
       <h1 id="titulo">¡Gracias por tu visita!</h1>
       <p class="subtitulo">¿Cómo calificarías tu experiencia?</p>
       <div class="estrellas">⭐⭐⭐⭐⭐</div>
-
-      <a id="btnBueno" class="boton boton-bueno" href="#" target="_blank" rel="noopener">😀 Excelente — 5 estrellas</a>
-      <button class="boton boton-malo" onclick="mostrarGracias()">😕 Puede mejorar</button>
+      <button id="btnBueno" class="boton boton-bueno" onclick="elegirFeliz()">😀 Excelente — 5 estrellas</button>
+      <button id="btnMalo" class="boton boton-malo" onclick="elegirTriste()">😕 Puede mejorar</button>
     </div>
 
-    <!-- Vista 2: mensaje de gracias (aparece al tocar "Puede mejorar") -->
+    <!-- Vista 2: gracias (carita triste) -->
     <div id="gracias">
       <div class="check">🙏</div>
       <h2>¡Gracias por tu comentario!</h2>
       <p>Lamentamos no haberte dado una experiencia perfecta. Tu opinión nos ayuda a mejorar y la tomaremos muy en cuenta. ¡Esperamos verte pronto!</p>
+    </div>
+
+    <!-- Vista 3: ya votó (mismo celular) -->
+    <div id="yavoto">
+      <div class="icono">✅</div>
+      <h2>¡Ya registramos tu opinión!</h2>
+      <p>Gracias, tu respuesta ya fue contada. ¡Esperamos verte pronto!</p>
+    </div>
+
+    <!-- Vista 4: servicio en pausa (cuando ACTIVO = false) -->
+    <div id="pausa">
+      <div class="icono">🔒</div>
+      <h2>Servicio en pausa</h2>
+      <p>Este servicio no está disponible en este momento.</p>
     </div>
 
     <div class="pie" id="pie"></div>
@@ -137,13 +114,55 @@
 
 <script>
   // No necesitas tocar nada de aquí para abajo.
-  document.getElementById('btnBueno').href = ENLACE_GOOGLE_MAPS;
   document.getElementById('titulo').textContent = '¡Gracias por tu visita a ' + NOMBRE_DEL_LOCAL + '!';
   document.getElementById('pie').textContent = NOMBRE_DEL_LOCAL;
 
-  function mostrarGracias() {
+  var procesando = false;
+
+  // ¿Este celular ya votó en este local? (candado anti-repetición)
+  function yaVoto() {
+    try { return localStorage.getItem('voto_' + NUMERO_LOCAL) === '1'; } catch (e) { return false; }
+  }
+  function marcarVoto() {
+    try { localStorage.setItem('voto_' + NUMERO_LOCAL, '1'); } catch (e) {}
+  }
+  function mostrar(id) {
     document.getElementById('eleccion').style.display = 'none';
-    document.getElementById('gracias').style.display = 'block';
+    document.getElementById(id).style.display = 'block';
+  }
+
+  // Decide qué pantalla mostrar al abrir.
+  if (!ACTIVO) {
+    mostrar('pausa');
+  } else if (yaVoto()) {
+    mostrar('yavoto');
+  }
+
+  // Manda el registro al contador (si está configurado).
+  function registrar(tipo, despues) {
+    if (!ENLACE_CONTADOR) { if (despues) despues(); return; }
+    var u = ENLACE_CONTADOR + "?local=" + encodeURIComponent(NUMERO_LOCAL) + "&tipo=" + tipo;
+    var enviado = false;
+    try { enviado = navigator.sendBeacon(u); } catch (e) {}
+    if (!enviado) { new Image().src = u; }
+    if (despues) { setTimeout(despues, 200); }
+  }
+
+  function bloquearBotones() {
+    document.getElementById('btnBueno').disabled = true;
+    document.getElementById('btnMalo').disabled = true;
+  }
+
+  function elegirFeliz() {
+    if (procesando || yaVoto()) return;   // candado: un voto por celular
+    procesando = true; bloquearBotones(); marcarVoto();
+    registrar('feliz', function () { window.location.href = ENLACE_GOOGLE_MAPS; });
+  }
+  function elegirTriste() {
+    if (procesando || yaVoto()) return;   // candado: un voto por celular
+    procesando = true; bloquearBotones(); marcarVoto();
+    registrar('triste');
+    mostrar('gracias');
   }
 </script>
 </body>
